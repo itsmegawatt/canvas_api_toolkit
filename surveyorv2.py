@@ -79,27 +79,38 @@ class Submissions_API(Canvas_API):
         # openedxml = open('test.txt', 'r')
         # self.api_xml = openedxml.read()
 
-    def count_responses(self):
+    def tally_responses(self):
         root = ET.fromstring(self.api_xml)
-        dict_of_fields = collections.OrderedDict()
-        for response in root.iter('Response'):
-            """This loop creates a dictionary of all fields, and a dictionary of all answers, then counts how many times that answer occurs"""
-            label = response.getchildren()[0].text
-            value = response.getchildren()[1].text
-            if label not in dict_of_fields:
-                dict_of_fields[label] = collections.OrderedDict()
-            if value not in dict_of_fields[label]:
+        dict_of_screens = collections.OrderedDict()
+
+        """Populates the dict_of_screens dictionary with information about the form"""
+        for screen in root.iter('Screen'):
+            screen_name = screen.getchildren()[0].text
+            if screen_name not in dict_of_screens:
+                dict_of_screens[screen_name] = collections.OrderedDict()
+            for response in screen.iter('Response'):
+                field = response.getchildren()[0].text
+                value = response.getchildren()[1].text
+                if field not in dict_of_screens[screen_name]:
+                    dict_of_screens[screen_name][field] = collections.OrderedDict()
+                if value not in dict_of_screens[screen_name][field]:
+                    if value == None:
+                        dict_of_screens[screen_name][field]['Left Blank'] = 0
+                    if value != None:
+                        dict_of_screens[screen_name][field][value] = 0
                 if value == None:
-                    dict_of_fields[label]['Left Blank'] = 0
+                    dict_of_screens[screen_name][field]['Left Blank'] += 1
                 if value != None:
-                    dict_of_fields[label][value] = 0
-            if value == None:
-                dict_of_fields[label]['Left Blank'] += 1
-            if value != None:
-                dict_of_fields[label][value] += 1
-        for label in dict_of_fields:
-            """This loop displays the dictionary in a logical format"""
-            print('---' + label + '---')
-            for value in dict_of_fields[label]:
-                print(value + ': ' + str(dict_of_fields[label][value]))
+                    dict_of_screens[screen_name][field][value] += 1
+
+        """Displays the dict_of_screens dictionary in a readable format"""
+        for screen in dict_of_screens:
+            print('')
+            print('~~**~~ ' + screen + ' ~~**~~')
+            for label in dict_of_screens[screen]:
+                print('')
+                print(label)
+                print('----------')
+                for value in dict_of_screens[screen][label]:
+                    print(value + ': ' + str(dict_of_screens[screen][label][value]))
             print('')
