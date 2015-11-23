@@ -74,7 +74,7 @@ class Submissions_API(Canvas_API):
     def __init__(self, login_obj, formid):
         self.api_url = 'https://www.gocanvas.com/apiv2/submissions.xml'
         super(Submissions_API, self).__init__(login_obj)
-        self.api_call = self.api_call + '&form_id=' + formid
+        self.api_call = self.api_call + '&form_id=' + str(formid)
         self.api_xml = urllib2.urlopen(self.api_call).read()
         # openedxml = open('test.txt', 'r')
         # self.api_xml = openedxml.read()
