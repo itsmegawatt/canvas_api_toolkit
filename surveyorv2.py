@@ -95,22 +95,23 @@ class Submissions_API(Canvas_API):
                     dict_of_screens[screen_name][field] = collections.OrderedDict()
                 if value not in dict_of_screens[screen_name][field]:
                     if value == None:
-                        dict_of_screens[screen_name][field]['Left Blank'] = 0
-                    if value != None:
-                        dict_of_screens[screen_name][field][value] = 0
-                if value == None:
-                    dict_of_screens[screen_name][field]['Left Blank'] += 1
-                if value != None:
-                    dict_of_screens[screen_name][field][value] += 1
+                            dict_of_screens[screen_name][field]['Left Blank'] = 0 
+                    if value != None: 
+                        dict_of_screens[screen_name][field][value] = 0 
+                if value == None: 
+                    dict_of_screens[screen_name][field]['Left Blank'] += 1 
+                if value != None: 
+                    dict_of_screens[screen_name][field][value] += 1 
+                            
+        """Displays the dict_of_screens dictionary in a readable format""" 
+        for screen in dict_of_screens: 
+            print('') 
+            print('~~**~~ ' + screen + ' ~~**~~') 
+            for label in dict_of_screens[screen]: 
+                print('') 
+                print(label) 
+                print('----------') 
+                for value in dict_of_screens[screen][label]: 
+                    print(value + ': ' + str(dict_of_screens[screen][label][value])) 
+            print('')
 
-        """Displays the dict_of_screens dictionary in a readable format"""
-        for screen in dict_of_screens:
-            print('')
-            print('~~**~~ ' + screen + ' ~~**~~')
-            for label in dict_of_screens[screen]:
-                print('')
-                print(label)
-                print('----------')
-                for value in dict_of_screens[screen][label]:
-                    print(value + ': ' + str(dict_of_screens[screen][label][value]))
-            print('')
