@@ -58,8 +58,11 @@ class Forms_API(Canvas_API):
 
     def list_forms(self):
         root = ET.fromstring(self.api_xml)
+        formslist = "Here are your forms:<br /><br />"
         for label in root.iter('Form'):
             print((label.getchildren()[0].text + ' -- ID: ' + label.attrib['Id'] + ' -- Version: ' + label.getchildren()[2].text + ' -- Status: ' + label.getchildren()[1].text))
+            formslist += label.getchildren()[0].text + ' -- ID: ' + label.attrib['Id'] + ' -- Version: ' + label.getchildren()[2].text + "<br />"
+        return formslist
 
     def count_forms(self):
         root = ET.fromstring(self.api_xml)
@@ -67,6 +70,9 @@ class Forms_API(Canvas_API):
         for form in root.iter('Form'):
             total_forms += 1
         return total_forms
+
+    def test(self):
+        return 'Test'
 
 class Submissions_API(Canvas_API):
 
