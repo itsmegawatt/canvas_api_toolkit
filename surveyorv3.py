@@ -45,7 +45,6 @@ class Canvas_API(object, metaclass=abc.ABCMeta):
 
     def visit_api(self):
         """Opens the XML file in the web browser"""
-        print(self.api_call)
         webbrowser.open(self.api_call)
 
 class Forms_API(Canvas_API):
@@ -96,13 +95,13 @@ class Submissions_API(Canvas_API):
                 value = response.getchildren()[1].text
                 if field not in dict_of_screens[screen_name]:
                     dict_of_screens[screen_name][field] = collections.OrderedDict()
-                if value not in dict_of_screens[screen_name][field]:
+                if str(value) not in dict_of_screens[screen_name][field]:
                     if value == None:
-                            dict_of_screens[screen_name][field]['Left Blank'] = 0 
+                        dict_of_screens[screen_name][field]['None'] = 0 
                     if value != None: 
                         dict_of_screens[screen_name][field][value] = 0 
                 if value == None: 
-                    dict_of_screens[screen_name][field]['Left Blank'] += 1 
+                    dict_of_screens[screen_name][field]['None'] += 1 
                 if value != None: 
                     dict_of_screens[screen_name][field][value] += 1 
                             
@@ -123,14 +122,23 @@ class Images_API(Canvas_API):
         self.api_url = 'https://gocanvas.com/apiv2/images.xml'
         super(Images_API, self).__init__(login_obj)
         self.api_call = self.api_call + '&image_id=' + str(image_id)
-        self.api_xml = urllib.request.urlopen(self.api_call).read()
-
 
 class Reference_Data_API(Canvas_API):
-    pass
+    def __init__(self, login_obj):
+        self.api_url = 'https://gocanvas.com/apiv2/reference_datas'
+        super(Reference_Data_API, self).__init__(login_obj)
 
 class CSV_Meta_Data_API(Canvas_API):
-    pass
+    def __init__(self, login_obj, form_id):
+        self.api_url = 'https://gocanvas.com/apiv2/csv_meta_datas.xml'
+        super(CSV_Meta_Data_API, self).__init__(login_obj)
+        self.api_call = self.api_call + '&form_id=' + str(form_id)
+        self.api_xml = urllib.request.urlopen(self.api_call).read()
+        print(self.api_xml)
+
+    def list_submissions(self):
+        #To Do: List Form ID + Version + How many submission + current status
+        pass
 
 class CSV_API(Canvas_API):
     pass
@@ -152,6 +160,7 @@ class SurveyorInterface(object):
         self.password = tkinter.StringVar()
         self.submissions_form_id = tkinter.StringVar()
         self.images_form_id = tkinter.StringVar()
+        self.meta_form_id = tkinter.StringVar()
         self.console_text = tkinter.StringVar()
 
         self.build_login_gui()
@@ -179,6 +188,7 @@ class SurveyorInterface(object):
     def attempt_login(self):
         self.account_info = Login(self.username.get(), self.password.get())
         self.forms_api_login = Forms_API(self.account_info)
+        self.ref_api_login = Reference_Data_API(self.account_info)
 
         if self.forms_api_login.verify_login() == True:
             self.login_frame.grid_forget()
@@ -186,13 +196,13 @@ class SurveyorInterface(object):
             self.build_console()
             self.build_buttons_kit()
         else:
-            ##incorrect_login_message = tkinter.Label(self.login_frame, text = "Error: Incorrect Login")
-            ##incorrect_login_message.grid(column = 0, row = 3, columnspan = 2)
+            incorrect_login_message = tkinter.Label(self.login_frame, text = "Error: Incorrect Login")
+            incorrect_login_message.grid(column = 0, row = 3, columnspan = 2)
             #Commented the above to make it easier to log in and test, otherwise remove in final versoin
-            self.login_frame.grid_forget()
-            self.build_forms_browser()
-            self.build_console()
-            self.build_buttons_kit()
+            #self.login_frame.grid_forget()
+            #self.build_forms_browser()
+            #self.build_console()
+            #self.build_buttons_kit()
 
     def build_forms_browser(self):
         forms_browser_frame = tkinter.Frame(self.mainframe)
@@ -248,10 +258,19 @@ class SurveyorInterface(object):
         reference_data_api_title = tkinter.Label(buttons_kit_frame, text = "Reference Data API")
         reference_data_api_title.grid(column = 3, row = 0)
 
+        visit_reference_data_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit Reference Data', command = self.ref_api_login.visit_api)
+        visit_reference_data_api_button.grid(column = 3, row = 1)
+
 
         #-----CSV Meta Data API Buttons-----#
         csv_meta_data_api_title = tkinter.Label(buttons_kit_frame, text = "CSV Meta Data API")
         csv_meta_data_api_title.grid(column = 4, row = 0)
+
+        meta_form_id_entry = tkinter.Entry(buttons_kit_frame, textvariable = self.meta_form_id)
+        meta_form_id_entry.grid(column = 4, row = 1)
+
+        visit_meta_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit XML', command = self.gui_visit_meta_xml)
+        visit_meta_api_button.grid(column = 4, row = 2)
 
 
         #-----CSV API Buttons-----#
@@ -279,6 +298,10 @@ class SurveyorInterface(object):
     def gui_view_image(self):
         image_obj = Images_API(self.account_info, self.images_form_id.get())
         image_obj.visit_api()
+
+    def gui_visit_meta_xml(self):
+        meta_obj = CSV_Meta_Data_API(self.account_info, self.meta_form_id.get())
+        meta_obj.visit_api()
 
     def create_console(self):
         large_console = tkinter.scrolledtext.ScrolledText(self.mainframe)
