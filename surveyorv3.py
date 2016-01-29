@@ -40,7 +40,6 @@ class Login(object):
         self.password = password
 
 class Canvas_API(object, metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def __init__(self, login_obj):
         username = '?username=' + login_obj.username
@@ -53,7 +52,6 @@ class Canvas_API(object, metaclass=abc.ABCMeta):
         webbrowser.open(self.api_call)
 
 class Forms_API(Canvas_API):
-
     def __init__(self, login_obj):
         self.api_url = 'https://www.gocanvas.com/apiv2/forms.xml'
         super(Forms_API, self).__init__(login_obj)
@@ -79,7 +77,6 @@ class Forms_API(Canvas_API):
         return True
 
 class Submissions_API(Canvas_API):
-
     def __init__(self, login_obj, formid):
         self.api_url = 'https://www.gocanvas.com/apiv2/submissions.xml'
         super(Submissions_API, self).__init__(login_obj)
@@ -124,12 +121,7 @@ class Submissions_API(Canvas_API):
                     print((value + ': ' + str(dict_of_screens[screen][label][value]))) 
             print('')
 
-        #print(dict_of_screens)
-
-        #self.dict_of_screens = dict_of_screens
-
 class Images_API(Canvas_API):
-    
     def __init__(self, loginobj):
         pass
 
