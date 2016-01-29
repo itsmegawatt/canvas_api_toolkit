@@ -30,11 +30,7 @@ import tkinter #used for gui
 import tkinter.scrolledtext as tkst #used for gui textboxes with scrollbars
 
 class Login(object):
-    def __init__(self, username=None, password=None):
-        if username == None:
-            username = input('Enter username: ')
-        if password == None:
-            password = input('Enter password: ')
+    def __init__(self, username, password):
         username = username.replace('+', '%2B') #URL Encoding
         self.username = username
         self.password = password
@@ -49,6 +45,7 @@ class Canvas_API(object, metaclass=abc.ABCMeta):
 
     def visit_api(self):
         """Opens the XML file in the web browser"""
+        print(self.api_call)
         webbrowser.open(self.api_call)
 
 class Forms_API(Canvas_API):
@@ -122,8 +119,12 @@ class Submissions_API(Canvas_API):
             print('')
 
 class Images_API(Canvas_API):
-    def __init__(self, loginobj):
-        pass
+    def __init__(self, login_obj, image_id):
+        self.api_url = 'https://gocanvas.com/apiv2/images.xml'
+        super(Images_API, self).__init__(login_obj)
+        self.api_call = self.api_call + '&image_id=' + str(image_id)
+        self.api_xml = urllib.request.urlopen(self.api_call).read()
+
 
 class Reference_Data_API(Canvas_API):
     pass
@@ -149,7 +150,8 @@ class SurveyorInterface(object):
 
         self.username = tkinter.StringVar()
         self.password = tkinter.StringVar()
-        self.formid = tkinter.StringVar()
+        self.submissions_form_id = tkinter.StringVar()
+        self.images_form_id = tkinter.StringVar()
         self.console_text = tkinter.StringVar()
 
         self.build_login_gui()
@@ -223,8 +225,8 @@ class SurveyorInterface(object):
         submissions_api_title = tkinter.Label(buttons_kit_frame, text = "Submissions API")
         submissions_api_title.grid(column = 1,row = 0)
 
-        tally_responses_entry = tkinter.Entry(buttons_kit_frame, textvariable = self.formid)
-        tally_responses_entry.grid(column = 1, row = 1)
+        submissions_entry = tkinter.Entry(buttons_kit_frame, textvariable = self.submissions_form_id)
+        submissions_entry.grid(column = 1, row = 1)
 
         visit_submissions_xml_button = tkinter.Button(buttons_kit_frame, text = "Visit XML", command = self.gui_visit_submissions_xml)
         visit_submissions_xml_button.grid(column = 1, row = 2)
@@ -236,6 +238,11 @@ class SurveyorInterface(object):
         images_api_title = tkinter.Label(buttons_kit_frame, text = "Images API")
         images_api_title.grid(column = 2, row = 0)
 
+        images_api_entry = tkinter.Entry(buttons_kit_frame, textvariable = self.images_form_id)
+        images_api_entry.grid(column = 2, row = 1)
+
+        view_image_button = tkinter.Button(buttons_kit_frame, text = "View Image", command = self.gui_view_image)
+        view_image_button.grid(column = 2, row = 2)
 
         #-----Reference Data API Buttons-----#
         reference_data_api_title = tkinter.Label(buttons_kit_frame, text = "Reference Data API")
@@ -262,12 +269,16 @@ class SurveyorInterface(object):
         submissions_push_notifications_api_title.grid(column = 7, row = 0)
       
     def gui_tally_responses(self):
-        tallied = Submissions_API(self.account_info, self.formid.get())
-        tallied.tally_responses()
+        submissions_obj = Submissions_API(self.account_info, self.submissions_form_id.get())
+        submissions_obj.tally_responses()
 
     def gui_visit_submissions_xml(self):
-        tallied = Submissions_API(self.account_info, self.formid.get())
-        tallied.visit_api()
+        submissions_obj = Submissions_API(self.account_info, self.submissions_form_id.get())
+        submissions_obj.visit_api()
+
+    def gui_view_image(self):
+        image_obj = Images_API(self.account_info, self.images_form_id.get())
+        image_obj.visit_api()
 
     def create_console(self):
         large_console = tkinter.scrolledtext.ScrolledText(self.mainframe)
