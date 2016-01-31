@@ -119,18 +119,18 @@ class Submissions_API(Canvas_API):
 
 class Images_API(Canvas_API):
     def __init__(self, login_obj, image_id):
-        self.api_url = 'https://gocanvas.com/apiv2/images.xml'
+        self.api_url = 'https://www.gocanvas.com/apiv2/images.xml'
         super(Images_API, self).__init__(login_obj)
         self.api_call = self.api_call + '&image_id=' + str(image_id)
 
 class Reference_Data_API(Canvas_API):
     def __init__(self, login_obj):
-        self.api_url = 'https://gocanvas.com/apiv2/reference_datas'
+        self.api_url = 'https://www.gocanvas.com/apiv2/reference_datas'
         super(Reference_Data_API, self).__init__(login_obj)
 
 class CSV_Meta_Data_API(Canvas_API):
     def __init__(self, login_obj, form_id):
-        self.api_url = 'https://gocanvas.com/apiv2/csv_meta_datas.xml'
+        self.api_url = 'https://www.gocanvas.com/apiv2/csv_meta_datas.xml'
         super(CSV_Meta_Data_API, self).__init__(login_obj)
         self.api_call = self.api_call + '&form_id=' + str(form_id)
         self.api_xml = urllib.request.urlopen(self.api_call).read()
@@ -141,7 +141,8 @@ class CSV_Meta_Data_API(Canvas_API):
         pass
 
 class CSV_API(Canvas_API):
-    pass
+    def __init__(self, login_obj):
+        pass
 
 class Dispatch_Items_API(Canvas_API):
     pass
