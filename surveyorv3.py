@@ -65,6 +65,16 @@ class Forms_API(Canvas_API):
         print(total_forms)
         return total_forms
 
+    def forms_with_multiple_versions(self):
+        root = ET.fromstring(self.api_xml)
+        for form in root.iter('Form'):
+            form_id = form.attrib['Id']
+            form_name = form[0].text
+            form_version = form[2].text
+            if int(form_version) > 1:
+                print('{} -- ID: {} -- Version: {}'.format(form_name, form_id, form_version))
+            
+
     def verify_login(self):
         #Verifies if the login works by opening the XML file, and if the first child of the root is "Error", it is a failed login. If it works, it should be "Forms".
         verifyroot = ET.fromstring(self.api_xml)
@@ -117,6 +127,15 @@ class Submissions_API(Canvas_API):
                     print((value + ': ' + str(dict_of_screens[screen][label][value]))) 
             print('')
 
+    def find_all_images(self):
+        root = ET.fromstring(self.api_xml)
+        for response in root.iter('Response'):
+            field_label = response[0].text
+            field_value = response[1].text
+            field_type = response[2].text
+            if field_type == 'Image Capture':
+                print('{}: {}'.format(field_label, field_value))
+
 class Images_API(Canvas_API):
     def __init__(self, login_obj, image_id):
         self.api_url = 'https://www.gocanvas.com/apiv2/images.xml'
@@ -140,15 +159,21 @@ class CSV_Meta_Data_API(Canvas_API):
         #To Do: List Form ID + Version + How many submission + current status
         pass
 
-class CSV_API(Canvas_API):
-    def __init__(self, login_obj):
+    def list_all_versions(self):
         pass
 
-class Dispatch_Items_API(Canvas_API):
-    pass
+class CSV_API(Canvas_API):
+    def __init__(self, login_obj, form_id):
+        self.api_url = 'https://www.gocanvas.com/apiv2/csv.xml'
+        super(CSV_API, self).__init__(login_obj)
+        self.api_call = self.api_call + '&form_id=' + str(form_id) + '&begin_second=1' + '&end_second=9999999999999999999999'
+        self.api_xml = urllib.request.urlopen(self.api_call).read()
+        print(self.api_xml)
 
-class Submissions_Push_Notifications_API(Canvas_API):
-    pass
+class Dispatch_Items_API(Canvas_API):
+    def __init__(self, login_obj):
+        self.api_url = 'https://www.gocanvas.com/apiv2/dispatch_items'
+        super(Dispatch_Items_API, self).__init__(login_obj)
 
 class SurveyorInterface(object):
     def __init__(self, master):
@@ -162,6 +187,7 @@ class SurveyorInterface(object):
         self.submissions_form_id = tkinter.StringVar()
         self.images_form_id = tkinter.StringVar()
         self.meta_form_id = tkinter.StringVar()
+        self.csv_form_id = tkinter.StringVar()
         self.console_text = tkinter.StringVar()
 
         self.build_login_gui()
@@ -231,6 +257,9 @@ class SurveyorInterface(object):
         count_forms_button = tkinter.Button(buttons_kit_frame, text = "Count Forms", command = self.forms_api_login.count_forms)
         count_forms_button.grid(column = 0, row = 3)
 
+        find_multiple_versions_button = tkinter.Button(buttons_kit_frame, text = 'Multiple Versions', command = self.forms_api_login.forms_with_multiple_versions)
+        find_multiple_versions_button.grid(column = 0, row = 4)
+
         #-----Submissions API Buttons-----#
 
         submissions_api_title = tkinter.Label(buttons_kit_frame, text = "Submissions API")
@@ -244,6 +273,9 @@ class SurveyorInterface(object):
 
         tally_responses_button = tkinter.Button(buttons_kit_frame, text = "Tally Responses", command = self.gui_tally_responses)
         tally_responses_button.grid(column = 1, row = 3)
+
+        find_all_images_button = tkinter.Button(buttons_kit_frame, text = 'Find All Images', command = self.gui_find_all_images)
+        find_all_images_button.grid(column = 1, row = 4)
 
         #-----Images API Buttons-----#
         images_api_title = tkinter.Label(buttons_kit_frame, text = "Images API")
@@ -259,9 +291,8 @@ class SurveyorInterface(object):
         reference_data_api_title = tkinter.Label(buttons_kit_frame, text = "Reference Data API")
         reference_data_api_title.grid(column = 3, row = 0)
 
-        visit_reference_data_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit Reference Data', command = self.ref_api_login.visit_api)
+        visit_reference_data_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit Reference Data', command = self.ref_api_login.visit_api, state=tkinter.DISABLED)
         visit_reference_data_api_button.grid(column = 3, row = 1)
-
 
         #-----CSV Meta Data API Buttons-----#
         csv_meta_data_api_title = tkinter.Label(buttons_kit_frame, text = "CSV Meta Data API")
@@ -273,24 +304,30 @@ class SurveyorInterface(object):
         visit_meta_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit XML', command = self.gui_visit_meta_xml)
         visit_meta_api_button.grid(column = 4, row = 2)
 
-
         #-----CSV API Buttons-----#
         csv_api_title = tkinter.Label(buttons_kit_frame, text = "CSV API")
         csv_api_title.grid(column = 5, row = 0)
 
+        csv_form_id_entry = tkinter.Entry(buttons_kit_frame, textvariable = self.csv_form_id)
+        csv_form_id_entry.grid(column = 5, row = 1)
+
+        visit_csv_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit XML', command = self.gui_visit_csv)
+        visit_csv_api_button.grid(column = 5, row = 2)
 
         #-----Dispatch Items API Buttons-----#
         dispatch_items_api_title = tkinter.Label(buttons_kit_frame, text = "Dispatch Items API")
         dispatch_items_api_title.grid(column = 6, row = 0)
 
+        visit_dispatch_button = tkinter.Button(buttons_kit_frame, text = 'Visit Dispatch', state=tkinter.DISABLED)
+        visit_dispatch_button.grid(column = 6, row = 1)
 
-        #-----Submissions Push Notifications API Buttons-----#
-        submissions_push_notifications_api_title = tkinter.Label(buttons_kit_frame, text = "Dispatch Items API")
-        submissions_push_notifications_api_title.grid(column = 7, row = 0)
-      
     def gui_tally_responses(self):
         submissions_obj = Submissions_API(self.account_info, self.submissions_form_id.get())
         submissions_obj.tally_responses()
+
+    def gui_find_all_images(self):
+        submissions_obj = Submissions_API(self.account_info, self.submissions_form_id.get())
+        submissions_obj.find_all_images()
 
     def gui_visit_submissions_xml(self):
         submissions_obj = Submissions_API(self.account_info, self.submissions_form_id.get())
@@ -303,6 +340,10 @@ class SurveyorInterface(object):
     def gui_visit_meta_xml(self):
         meta_obj = CSV_Meta_Data_API(self.account_info, self.meta_form_id.get())
         meta_obj.visit_api()
+
+    def gui_visit_csv(self):
+        csv_obj = CSV_API(self.account_info, self.csv_form_id.get())
+        csv_obj.visit_api()
 
     def create_console(self):
         large_console = tkinter.scrolledtext.ScrolledText(self.mainframe)
