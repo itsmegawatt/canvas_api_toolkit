@@ -37,10 +37,14 @@ class Login(object):
 
 class Canvas_API(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def __init__(self, login_obj):
+    def __init__(self, login_obj, form_id = None, image_id = None):
         username = '?username=' + login_obj.username
         password = '&password=' + login_obj.password
         self.api_call = self.api_url + username + password
+        if form_id is not None:
+            self.api_call = self.api_call + '&form_id=' + form_id
+        if image_id is not None:
+            self.api_call = self.api_call + '&image_id=' + image_id
         self.api_xml = urllib.request.urlopen(self.api_call).read() #The XML source code stored into a string
 
     def visit_api(self):
@@ -73,7 +77,6 @@ class Forms_API(Canvas_API):
             form_version = form[2].text
             if int(form_version) > 1:
                 print('{} -- ID: {} -- Version: {}'.format(form_name, form_id, form_version))
-            
 
     def verify_login(self):
         #Verifies if the login works by opening the XML file, and if the first child of the root is "Error", it is a failed login. If it works, it should be "Forms".
@@ -83,13 +86,9 @@ class Forms_API(Canvas_API):
         return True
 
 class Submissions_API(Canvas_API):
-    def __init__(self, login_obj, formid):
+    def __init__(self, login_obj, form_id):
         self.api_url = 'https://www.gocanvas.com/apiv2/submissions.xml'
-        super(Submissions_API, self).__init__(login_obj)
-        self.api_call = self.api_call + '&form_id=' + str(formid)
-        self.api_xml = urllib.request.urlopen(self.api_call).read()
-        # openedxml = open('test.txt', 'r')
-        # self.api_xml = openedxml.read()
+        super(Submissions_API, self).__init__(login_obj, form_id = form_id)
 
     def tally_responses(self):
         root = ET.fromstring(self.api_xml)
@@ -139,8 +138,7 @@ class Submissions_API(Canvas_API):
 class Images_API(Canvas_API):
     def __init__(self, login_obj, image_id):
         self.api_url = 'https://www.gocanvas.com/apiv2/images.xml'
-        super(Images_API, self).__init__(login_obj)
-        self.api_call = self.api_call + '&image_id=' + str(image_id)
+        super(Images_API, self).__init__(login_obj, image_id = image_id)
 
 class Reference_Data_API(Canvas_API):
     def __init__(self, login_obj):
@@ -150,23 +148,22 @@ class Reference_Data_API(Canvas_API):
 class CSV_Meta_Data_API(Canvas_API):
     def __init__(self, login_obj, form_id):
         self.api_url = 'https://www.gocanvas.com/apiv2/csv_meta_datas.xml'
-        super(CSV_Meta_Data_API, self).__init__(login_obj)
-        self.api_call = self.api_call + '&form_id=' + str(form_id)
-        self.api_xml = urllib.request.urlopen(self.api_call).read()
-        print(self.api_xml)
+        super(CSV_Meta_Data_API, self).__init__(login_obj, form_id = form_id)
 
-    def list_submissions(self):
-        #To Do: List Form ID + Version + How many submission + current status
-        pass
-
-    def list_all_versions(self):
-        pass
+    def view_lineage(self):
+        root = ET.fromstring(self.api_xml)
+        for form in root.iter('Form'):
+            form_id = form.attrib['Id']
+            form_name = form[0].text
+            form_version = form[2].text
+            form_submissions = form[3].text
+            print('{} -- ID: {} -- Version {} -- Submissions: {}'.format(form_name, form_id, form_version, form_submissions))
 
 class CSV_API(Canvas_API):
     def __init__(self, login_obj, form_id):
         self.api_url = 'https://www.gocanvas.com/apiv2/csv.xml'
-        super(CSV_API, self).__init__(login_obj)
-        self.api_call = self.api_call + '&form_id=' + str(form_id) + '&begin_second=1' + '&end_second=9999999999999999999999'
+        super(CSV_API, self).__init__(login_obj, form_id = form_id)
+        self.api_call = self.api_call + '&begin_second=1' + '&end_second=9999999999999999999999'
         self.api_xml = urllib.request.urlopen(self.api_call).read()
         print(self.api_xml)
 
@@ -304,6 +301,9 @@ class SurveyorInterface(object):
         visit_meta_api_button = tkinter.Button(buttons_kit_frame, text = 'Visit XML', command = self.gui_visit_meta_xml)
         visit_meta_api_button.grid(column = 4, row = 2)
 
+        view_lineage_button = tkinter.Button(buttons_kit_frame, text = 'View Form Lineage', command = self.gui_view_lineage)
+        view_lineage_button.grid(column = 4, row = 3)
+
         #-----CSV API Buttons-----#
         csv_api_title = tkinter.Label(buttons_kit_frame, text = "CSV API")
         csv_api_title.grid(column = 5, row = 0)
@@ -341,10 +341,14 @@ class SurveyorInterface(object):
         meta_obj = CSV_Meta_Data_API(self.account_info, self.meta_form_id.get())
         meta_obj.visit_api()
 
+    def gui_view_lineage(self):
+        meta_obj = CSV_Meta_Data_API(self.account_info, self.meta_form_id.get())
+        meta_obj.view_lineage()
+
     def gui_visit_csv(self):
         csv_obj = CSV_API(self.account_info, self.csv_form_id.get())
         csv_obj.visit_api()
-
+    
     def create_console(self):
         large_console = tkinter.scrolledtext.ScrolledText(self.mainframe)
         large_console.grid(column = 0, row = 8, columnspan = 2)
